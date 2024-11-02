@@ -1,6 +1,7 @@
 {
   "name": "server",
   "scripts": {
+    "start": "bun server/index.tsx",
     "dev": "bun run --hot server/index.tsx"
   },
   "dependencies": {
@@ -9,6 +10,10 @@
     "uuid": "^11.0.2"
   },
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.5.9",
     "@types/bun": "latest"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-musl": "4.9.5"
   }
 }

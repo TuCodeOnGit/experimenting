@@ -3,7 +3,8 @@ import { ref } from 'vue';
 import { PROFILE, MESSAGE } from './constants';
 import { useWebSocket } from '@vueuse/core';
 
-const {status, ws, send} = useWebSocket('ws://localhost:3000/ws')
+const url = process.env.NODE_ENV === "production" ? '/ws' : 'ws://localhost:3000/ws'
+const {status, ws, send} = useWebSocket(url)
 const profile = ref({
   id: '',
   name: ''

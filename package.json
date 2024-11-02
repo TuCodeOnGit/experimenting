@@ -1,0 +1,14 @@
+{
+  "name": "server",
+  "scripts": {
+    "dev": "bun run --hot server/index.tsx"
+  },
+  "dependencies": {
+    "hono": "^4.6.8",
+    "pokemon": "^3.2.1",
+    "uuid": "^11.0.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

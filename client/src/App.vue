@@ -3,14 +3,14 @@ import { ref } from 'vue';
 import { PROFILE, MESSAGE } from './constants';
 import { useWebSocket } from '@vueuse/core';
 
-const url = process.env.NODE_ENV === "production" ? '/ws' : 'ws://localhost:3000/ws'
-const {status, ws, send} = useWebSocket(url)
+const {status, ws, send} = useWebSocket('/ws')
 const profile = ref({
   id: '',
   name: ''
 })
 const clientMessage = ref("")
 const serverMessage = ref("")
+const userList = ref([])
 
 if (ws.value) {
   ws.value.onmessage = handleOnMessage
@@ -39,13 +39,12 @@ function getSocketMessage(message: string) {
 
 <template>
   <h1>What does WebSocket actually do?</h1>
-
   <ol>
     <li>
       <h4>Two-way communicating</h4>
       <ul>
         <li>Status: {{ status }}</li>
-        <li>Data:
+        <li>Your profile:
           <ul>Id: {{ profile.id }}</ul>
           <ul>Name<small>(Pokemon name)</small>: {{ profile.name }}</ul>
         </li>
@@ -61,4 +60,14 @@ function getSocketMessage(message: string) {
     </li>
   </ol>
 
+  <h1>Signal Server for WebRTC</h1>
+
+  <figure>
+    <figcaption>User List</figcaption>
+    <ul>
+      <li v-for="user in userList">
+        {{ user }}
+      </li>
+    </ul>
+  </figure>
 </template>

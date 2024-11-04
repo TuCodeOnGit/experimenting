@@ -3,13 +3,15 @@ import { createBunWebSocket } from "hono/bun";
 import type { ServerWebSocket } from "bun";
 import { v4 } from "uuid";
 import * as pokemon from "pokemon";
-import { PROFILE, MESSAGE } from "../constants";
+import { PROFILE, MESSAGE, PUBLISH } from "../constants";
+import { server } from "..";
 
 type Socket = ServerWebSocket & { id: string; name: string };
 type SocketMessage = { type: string; data: any };
 type Group = { [key: string]: Socket };
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 const group: Group = {};
+const topic = 'chat-room';
 export const wsRoute = new Hono().get(
   "/",
   upgradeWebSocket((_) => ({
@@ -20,14 +22,16 @@ export const wsRoute = new Hono().get(
       rawWs.id = uuid;
       rawWs.name = name;
       group[uuid] = rawWs;
-      const data = {
+      rawWs.subscribe(topic);
+      const initProfileData = {
         type: PROFILE,
         data: {
           id: uuid,
           name,
         },
       };
-      rawWs.send(JSON.stringify(data));
+      rawWs.send(JSON.stringify(initProfileData));
+      publishUserList()
       console.log(`WebSocket ${rawWs.id} server opened`);
     },
     onMessage(e, ws) {
@@ -49,12 +53,21 @@ export const wsRoute = new Hono().get(
     },
     onClose(e, ws) {
       const rawWs = ws.raw as Socket;
+      rawWs.unsubscribe(topic);
       delete group[rawWs.id];
+      publishUserList()
       console.log(
         `WebSocket ${rawWs.id} closed and unsubscribed with reason: ${e.reason}`
       );
     },
   }))
 );
+
+function publishUserList() {
+  server.publish(topic,JSON.stringify({
+    type: PUBLISH,
+    data: Object.values(group).map(({ id, name }) => ({ id, name }))
+  }))
+}
 
 export { websocket };

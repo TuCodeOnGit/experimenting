@@ -3,10 +3,10 @@ import { createBunWebSocket } from "hono/bun";
 import type { ServerWebSocket } from "bun";
 import { v4 } from "uuid";
 import * as pokemon from "pokemon";
-import { PROFILE, MESSAGE, PUBLISH, OFFER } from "../constants";
+import { PROFILE, MESSAGE, PUBLISH, OFFER, CANDIDATE } from "../constants";
 import { server } from "..";
 
-type Socket = ServerWebSocket & { id: string; name: string };
+type Socket = ServerWebSocket & { id: string; name: string};
 type SocketMessage = { type: string; data: any, id?: string };
 type Group = { [key: string]: Socket };
 const { upgradeWebSocket, websocket } = createBunWebSocket();
@@ -55,6 +55,13 @@ export const wsRoute = new Hono().get(
               id: rawWs.id
             })
           )
+          break;
+        case CANDIDATE:
+          console.log(`server receive candidate from ${rawWs.name}`)
+          group[id as string].send(JSON.stringify({
+            type: CANDIDATE,
+            data
+          }))
           break;
         default:
           break;

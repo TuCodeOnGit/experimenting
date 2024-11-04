@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { PROFILE, MESSAGE, PUBLISH, OFFER } from '../../server/constants';
+import { PROFILE, MESSAGE, PUBLISH, OFFER, CANDIDATE } from '../../server/constants';
 import { useWebSocket } from '@vueuse/core';
 import { Sprites } from '@pkmn/img';
 
@@ -21,7 +21,24 @@ const profile = ref<User>({
 const clientMessage = ref("")
 const serverMessage = ref("")
 const userList = ref<User[]>([])
-const pc = new RTCPeerConnection(config);
+const pc = ref(new RTCPeerConnection(config));
+const dataChannel = ref<RTCDataChannel>(pc.value.createDataChannel('myChannel'))
+const channelText = ref("")
+const userText = ref("")
+
+dataChannel.value.onmessage = function(e: MessageEvent) {
+  channelText.value += `${e.data}\n`
+}
+pc.value.ondatachannel = function(e) {
+  console.log(e.channel)
+  dataChannel.value = e.channel
+  dataChannel.value.onopen = function(e) {
+    console.log('channel open')
+  }
+  dataChannel.value.onmessage = function (e) {
+    console.log(e)
+  }
+}
 
 if (ws.value) {
   ws.value.onmessage = handleOnMessage
@@ -43,29 +60,48 @@ function handleOnMessage(e: MessageEvent) {
       console.log(`Receiver offer from ${id}`)
       handleOffer(data, id)
       break;
+    case CANDIDATE:
+      console.log(`Receive icecandidate`)
+      handleCandidate(data)
+      break;
     default:
       break;
   }
 }
 async function sendOffer(id: string) {
-  await pc.setLocalDescription()
+  await pc.value.setLocalDescription()
   send(JSON.stringify({
     type: OFFER,
-    data: pc.localDescription,
+    data: pc.value.localDescription,
     id
   }))
 }
 async function handleOffer(offer: RTCSessionDescription, senderId: string) {
-  await pc.setRemoteDescription(offer)
+  await pc.value.setRemoteDescription(offer)
   if (offer.type === "offer") {
-    await pc.setLocalDescription();
+    await pc.value.setLocalDescription();
     send(JSON.stringify({
       type: OFFER,
-      data: pc.localDescription,
+      data: pc.value.localDescription,
       id: senderId
     }))
   }
-  console.log(pc)
+  pc.value.onicecandidate = ({ candidate }) => {
+    send(JSON.stringify({
+      type: CANDIDATE,
+      data: candidate,
+      id: senderId
+    }))
+  }
+  console.log(pc.value)
+}
+async function handleCandidate(candidate: RTCIceCandidate) {
+  await pc.value.addIceCandidate(candidate)
+}
+function textChannel(text: string) {
+  console.log(text)
+  // console.log(dataChannel)
+  dataChannel.value.send(text)
 }
 function getSocketMessage(message: string) {
   return JSON.stringify({
@@ -118,9 +154,16 @@ function getPokeImgUrl(name: string) {
   <h1>What does WebRTC actually do?</h1>
   <ol>
     <li>
-      <h4>Data Channel</h4>
-      <textarea value="abc" cols="100" rows="10" disabled></textarea>
-      <form><input type="text" placeholder="Your message"><button type="submit">🚀</button></form>
+      <h4>Peer connection</h4>
+      <ul>
+        <li>ConnectionState: {{ pc.connectionState }}</li>
+        <li>SignalingState: {{ pc.signalingState }}</li>
+      </ul>
+    </li>
+    <li>
+      <h4>Data Channel <small>State: {{ dataChannel.readyState }}</small></h4> 
+      <textarea :value="channelText" cols="100" rows="10" placeholder="Text from channel" disabled></textarea>
+      <form @submit.prevent="textChannel(userText)"><input v-model="userText" type="text" placeholder="Your message"><button type="submit">🚀</button></form>
     </li>
   </ol>
 </template>

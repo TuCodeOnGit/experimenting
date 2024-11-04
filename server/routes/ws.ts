@@ -3,11 +3,11 @@ import { createBunWebSocket } from "hono/bun";
 import type { ServerWebSocket } from "bun";
 import { v4 } from "uuid";
 import * as pokemon from "pokemon";
-import { PROFILE, MESSAGE, PUBLISH } from "../constants";
+import { PROFILE, MESSAGE, PUBLISH, OFFER } from "../constants";
 import { server } from "..";
 
 type Socket = ServerWebSocket & { id: string; name: string };
-type SocketMessage = { type: string; data: any };
+type SocketMessage = { type: string; data: any, id?: string };
 type Group = { [key: string]: Socket };
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 const group: Group = {};
@@ -36,7 +36,7 @@ export const wsRoute = new Hono().get(
     },
     onMessage(e, ws) {
       const rawWs = ws.raw as Socket;
-      const { type, data } = JSON.parse(e.data.toString()) as SocketMessage;
+      const { type, data, id } = JSON.parse(e.data.toString()) as SocketMessage;
       switch (type) {
         case MESSAGE:
           rawWs.send(
@@ -45,7 +45,16 @@ export const wsRoute = new Hono().get(
               data: `Server receive '${data}' from ${group[rawWs.id].name}`
             })
           );
-          
+          break;
+        case OFFER:
+          console.log(`server receive offer from ${rawWs.id} to ${id}`)
+          group[id as string].send(
+            JSON.stringify({
+              type: OFFER,
+              data,
+              id: rawWs.id
+            })
+          )
           break;
         default:
           break;

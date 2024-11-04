@@ -3,7 +3,9 @@ import { ref } from 'vue';
 import { PROFILE, MESSAGE } from './constants';
 import { useWebSocket } from '@vueuse/core';
 
-const {status, ws, send} = useWebSocket('/ws')
+const url = process.env.NODE_ENV === "production" ? '/ws' : "ws://127.0.0.1:3000/ws"
+
+const {status, ws, send} = useWebSocket(url)
 const profile = ref({
   id: '',
   name: ''
@@ -69,5 +71,5 @@ function getSocketMessage(message: string) {
         {{ user }}
       </li>
     </ul>
-  </figure>
+  </figure>  
 </template>

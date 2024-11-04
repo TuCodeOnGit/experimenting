@@ -7,7 +7,6 @@
   "dependencies": {
     "hono": "^4.6.8",
     "pokemon": "^3.2.1",
-    "pouchdb": "^9.0.0",
     "uuid": "^11.0.2"
   },
   "devDependencies": {

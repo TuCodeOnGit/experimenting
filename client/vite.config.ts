@@ -6,7 +6,12 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
-      "/ws": "ws://127.0.0.1:3000"
+      '/ws': {
+        target: 'ws://127.0.0.1:3000/ws',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
     }
   }
 })
